@@ -1,0 +1,112 @@
+<!doctype html>
+<!-- Last Ferry is an offline photo-to-poster studio. Four independently framed panels, an original display alphabet, five print grades and three native PNG formats. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#171b1b">
+  <title>Last Ferry · Soundhouse Cover Studio</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="studio.css">
+  <script defer src="art/harbor.js"></script>
+  <script defer src="art/pilot.js"></script>
+  <script defer src="art/coupe.js"></script>
+  <script defer src="art/key.js"></script>
+  <script defer src="art/crossing.js"></script>
+  <script defer src="lettering.js"></script>
+  <script defer src="poster.js"></script>
+  <script defer src="studio.js"></script>
+</head>
+<body>
+  <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+    <symbol id="flag" viewBox="0 0 46 30"><path fill="currentColor" stroke="none" d="M1 2l44 2-9 11 6 12L1 24z"/><path stroke="none" fill="#202722" d="M6 16h8l8-9h6l-6 9h10l-6 4H6zm0 6 16-1-3 2H6z"/></symbol>
+    <symbol id="download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v4h16v-4"/></symbol>
+    <symbol id="upload" viewBox="0 0 24 24"><path d="M12 16V4m-5 5 5-5 5 5M4 16v4h16v-4"/></symbol>
+    <symbol id="undo" viewBox="0 0 24 24"><path d="M8 4 3 9l5 5M4 9h10a6 6 0 0 1 0 12"/></symbol>
+    <symbol id="redo" viewBox="0 0 24 24"><path d="m16 4 5 5-5 5m4-5H10a6 6 0 0 0 0 12"/></symbol>
+    <symbol id="save" viewBox="0 0 24 24"><path d="M4 3h13l4 4v14H4zM8 3v7h8V3M8 21v-7h9v7"/></symbol>
+    <symbol id="folder" viewBox="0 0 24 24"><path d="M2 7V5h8l3 3h8v3M2 9h9l2 2h9l-4 9H3z"/></symbol>
+    <symbol id="rotate" viewBox="0 0 24 24"><path d="M19 8a8 8 0 1 0 1 8M19 3v6h-6"/></symbol>
+    <symbol id="flip" viewBox="0 0 24 24"><path d="M12 2v3m0 3v3m0 3v3m0 3v2M3 18h5V7zm18 0h-5V7z"/></symbol>
+    <symbol id="layers" viewBox="0 0 24 24"><path d="m3 9 9-5 9 5-9 5zM3 13l9 5 9-5M3 17l9 5 9-5"/></symbol>
+    <symbol id="move" viewBox="0 0 24 24"><path d="M12 2v20M2 12h20M8 6l4-4 4 4m-8 12 4 4 4-4M6 8l-4 4 4 4m12-8 4 4-4 4"/></symbol>
+    <symbol id="keys" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M5 9h1m3 0h1m3 0h1m3 0h1M5 12h1m3 0h1m3 0h1m3 0h1M8 16h8"/></symbol>
+    <symbol id="close" viewBox="0 0 24 24"><path d="m5 5 14 14M19 5 5 19"/></symbol>
+    <symbol id="trash" viewBox="0 0 24 24"><path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 9v8m4-8v8"/></symbol>
+    <symbol id="frame" viewBox="0 0 24 24"><path d="M9 3H3v6m12-6h6v6M3 15v6h6m12-6v6h-6"/></symbol>
+  </defs></svg>
+  <header class="topbar">
+    <div class="brand"><svg class="brandmark"><use href="#flag"/></svg><strong>Soundhouse</strong><span class="brand-product">Cover Studio</span></div>
+    <div class="actions">
+      <button id="undoBtn" class="icon" aria-label="Undo" title="Undo (Ctrl/⌘ Z)"><svg><use href="#undo"/></svg></button>
+      <button id="redoBtn" class="icon" aria-label="Redo" title="Redo (Ctrl/⌘ Shift Z)"><svg><use href="#redo"/></svg></button>
+      <i></i>
+      <button id="saveBtn" class="quiet" title="Save project on this device"><svg><use href="#save"/></svg><span>Save</span></button>
+      <button id="restoreBtn" class="icon" aria-label="Restore saved project" title="Restore saved project"><svg><use href="#folder"/></svg></button>
+      <button id="downloadBtn" class="primary"><svg><use href="#download"/></svg>Download PNG</button>
+    </div>
+  </header>
+  <main class="workspace">
+    <section class="proof" aria-label="Live cover preview">
+      <div class="proof-head"><div><p class="eyebrow"><b></b> Live proof</p><h1 id="projectName">Last Ferry</h1></div>
+        <div class="format-group" aria-label="Export format">
+          <button data-format="Square" aria-label="Square 1080 by 1080"><i class="square"></i>1:1</button>
+          <button data-format="Portrait" aria-label="Portrait 1080 by 1350"><i class="portrait"></i>4:5</button>
+          <button data-format="Wide" aria-label="Wide 1920 by 1080"><i class="wide"></i>16:9</button>
+        </div>
+      </div>
+      <div class="mat" id="mat">
+        <div class="artboard" id="artboard">
+          <canvas id="proofCanvas" width="1080" height="1080" aria-label="Live poster. Drag to position the selected photo." tabindex="0"></canvas>
+          <svg id="guide" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon vector-effect="non-scaling-stroke"/></svg>
+          <button id="emptyImport" hidden><svg><use href="#upload"/></svg><strong>Add your first photo</strong><span>Drop it here or choose a file</span></button>
+        </div>
+      </div>
+      <div class="proof-foot"><span id="formatNote">1080 × 1080 PX</span><span class="feature-summary">4 local panels · 5 grades · 3 PNG sizes</span><span id="gradeNote">SUNSET</span></div>
+    </section>
+    <aside class="inspector">
+      <nav class="tabs" aria-label="Editing tools">
+        <button data-tab="panels" aria-pressed="true">Panels</button>
+        <button data-tab="type" aria-pressed="false">Lettering</button>
+        <button data-tab="finish" aria-pressed="false">Finish</button>
+      </nav>
+      <section id="panels" class="tab-content">
+        <div class="section-heading"><h2>Source panels</h2><small>01 — 04</small></div>
+        <div id="panelList" class="panel-list" aria-label="Choose a panel"></div>
+        <button class="import" id="addBtn"><svg><use href="#upload"/></svg><span><strong>Import photos</strong><small>Choose files, drop or paste</small></span><b>+</b></button>
+        <input type="file" id="fileInput" accept="image/*" multiple hidden>
+        <div id="libraryBox" hidden><label for="library">Photo library</label><select id="library"></select></div>
+        <div class="rule"></div>
+        <div class="section-heading"><h2>Panel crop</h2><small id="activePanel">01 / PILOT</small></div>
+        <p class="hint"><svg><use href="#move"/></svg>Drag the photo in the proof to position it.</p>
+        <div class="slider-label"><label for="zoom">Zoom</label><output id="zoomValue" for="zoom"></output></div>
+        <input id="zoom" type="range" min="100" max="350" step="1" value="100">
+        <div class="pair"><button id="flipBtn"><svg><use href="#flip"/></svg>Flip</button><button id="rotateBtn"><svg><use href="#rotate"/></svg>Rotate</button></div>
+        <div class="pair crop-actions"><button id="allBtn"><svg><use href="#layers"/></svg>Fill all panels</button><button id="clearBtn" aria-label="Clear selected panel" title="Clear selected panel"><svg><use href="#trash"/></svg></button></div>
+        <button id="sampleBtn" class="text-button">Restore illustrated plates</button>
+      </section>
+      <section id="type" class="tab-content" hidden>
+        <div class="section-heading"><h2>Title treatment</h2></div>
+        <label for="caption">Caption</label><input id="caption" maxlength="64" type="text">
+        <label for="subtitle">Subtitle strip</label><input id="subtitle" maxlength="90" type="text">
+        <label for="typeface">Lettering style</label><select id="typeface"><option>Harbor Block</option><option>Screen Serif</option><option>Studio Sans</option></select>
+        <div class="slider-label"><label for="typeSize">Title size</label><output id="sizeValue" for="typeSize"></output></div><input type="range" id="typeSize" min="55" max="150">
+        <label for="placement">Placement</label><select id="placement"><option>Lower</option><option>Center</option><option>Top</option></select>
+      </section>
+      <section id="finish" class="tab-content" hidden>
+        <div class="section-heading"><h2>Color grade</h2><small>05 STOCKS</small></div>
+        <div id="grades" class="grades"></div><div class="rule"></div>
+        <div class="section-heading"><h2>Print texture</h2></div>
+        <div class="slider-label"><label for="grain">Film grain</label><output id="grainValue" for="grain"></output></div><input id="grain" type="range" min="0" max="100">
+        <div class="slider-label"><label for="vignette">Vignette</label><output id="vignetteValue" for="vignette"></output></div><input id="vignette" type="range" min="0" max="100">
+      </section>
+      <footer class="inspector-foot"><span class="device-dot"></span>Local workspace<button id="helpBtn" class="icon" aria-label="Keyboard shortcuts" title="Keyboard shortcuts"><svg><use href="#keys"/></svg></button></footer>
+    </aside>
+  </main>
+  <div id="status" role="status" aria-live="polite"></div>
+  <dialog id="shortcuts"><div class="section-heading"><h2>Keyboard shortcuts</h2><button class="icon" id="closeHelp" aria-label="Close shortcuts"><svg><use href="#close"/></svg></button></div>
+    <dl><dt>Choose a panel</dt><dd>1 – 4</dd><dt>Move photo</dt><dd>Arrow keys</dd><dt>Zoom</dt><dd>− / +</dd><dt>Undo</dt><dd>⌘ / Ctrl Z</dd><dt>Redo</dt><dd>⌘ / Ctrl Shift Z</dd><dt>Save locally</dt><dd>⌘ / Ctrl S</dd><dt>Download PNG</dt><dd>⌘ / Ctrl Enter</dd></dl>
+    <p>Frame four local photos, set the lettering and choose one of five grades. Export a square, portrait or widescreen PNG.</p>
+  </dialog>
+</body>
+</html>
