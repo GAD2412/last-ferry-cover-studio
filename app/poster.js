@@ -1,6 +1,5 @@
 // One compositor drives the live proof and lossless PNG. Panel guides belong to the editor overlay.
 const formats = {Square:[1080,1080], Portrait:[1080,1350], Wide:[1920,1080]};
-const plateLabels = ['Pilot','Coupe','Motel key','Crossing'];
 const finishes = {
   'Sunset': ['saturate(1.07) contrast(1.04)', '#ea816a', .035],
   'Neon night': ['saturate(1.36) contrast(1.14) hue-rotate(-12deg)', '#7658c3', .19],

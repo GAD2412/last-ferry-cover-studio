@@ -4,7 +4,7 @@
 [![rank](https://make.fun/badge/gta6-cover-art-01/GAD2412/last-ferry-cover-studio/rank.svg)](https://make.fun/bounty/gta6-cover-art-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=gta6-cover-art-01)
 [![reward](https://make.fun/badge/gta6-cover-art-01/GAD2412/last-ferry-cover-studio/reward.svg)](https://make.fun/bounty/gta6-cover-art-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-cover-art-01)
 
-Last Ferry turns local pictures into illustrated coastal crime posters. Open the sample, drop your own photos into the panels, edit the title, and download a square, portrait, or landscape PNG.
+Last Ferry turns local photos into four-panel coastal crime posters. Start with four AI-generated photos of a fictional ferry crossing, or drop in your own. Frame each panel, edit the title, and download a square, portrait, or landscape PNG.
 
 ## Run it
 

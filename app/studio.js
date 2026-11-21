@@ -2,12 +2,18 @@
 const byId = id => document.getElementById(id);
 const proof = byId('proofCanvas');
 const images = new Map(), sources = new Map();
-const sampleIds = plateLabels.map((_,i) => 'plate-'+i);
+const samplePhotos = [
+  {id:'plate-0', label:'Pilot', file:'pilot.jpg', x:.08, y:-.8},
+  {id:'plate-1', label:'Coupe', file:'coupe.jpg', x:-.24, y:.12},
+  {id:'plate-2', label:'Motel key', file:'key.jpg', x:0, y:0},
+  {id:'plate-3', label:'Crossing', file:'crossing.jpg', x:0, y:-.16}
+];
+const sampleIds = samplePhotos.map(photo=>photo.id);
 const freshPanel = (source, x=0, y=0) => ({source,x,y,zoom:1,turn:0,flip:false});
-const defaultPanels = () => sampleIds.map((id,i)=>freshPanel(id,i===0?.22:0,i===0?-.68:-.16));
+const defaultPanels = () => samplePhotos.map(({id,x,y})=>freshPanel(id,x,y));
 let project = {
   format:'Square', caption:'Last Ferry', subtitle:'One crossing before dawn', type:'Harbor Block',
-  typeSize:100, placement:'Lower', grade:'Sunset', grain:18, vignette:29, panels:defaultPanels()
+  typeSize:100, placement:'Lower', grade:'Sunset', grain:5, vignette:16, panels:defaultPanels()
 };
 let active=0, previous=[], future=[], raf=0, noticeTimer, guideTimer, dragging=null, serial=0;
 let pendingEdit=null;
@@ -71,7 +77,7 @@ function setTab(tab) {
   });
 }
 function makeControls() {
-  plateLabels.forEach((label,i)=>{
+  samplePhotos.forEach(({label},i)=>{
     const btn=document.createElement('button');
     btn.setAttribute('aria-label','Select panel '+(i+1)+', '+label);
     btn.innerHTML='<span class="thumb"></span><em></em>';btn.onclick=()=>selectPanel(i);
@@ -101,7 +107,7 @@ function sync() {
   byId('gradeNote').textContent=project.grade.toUpperCase();
   const labelAt=i=>{
     const p=project.panels[i],src=sources.get(p.source);
-    return sampleIds.includes(p.source)?plateLabels[sampleIds.indexOf(p.source)]:(src?.name.replace(/\.[^.]+$/,'')||'Empty');
+    return src?.label || src?.name.replace(/\.[^.]+$/,'') || 'Empty';
   };
   byId('activePanel').textContent='0'+(active+1)+' / '+labelAt(active).toUpperCase();
   byId('library').value=current().source||'';
@@ -114,7 +120,7 @@ function sync() {
     const src=sources.get(project.panels[i].source);
     b.setAttribute('aria-pressed',active===i);
     b.children[0].style.backgroundImage=src?'url("'+src.data+'")':'none';
-    b.children[0].style.backgroundPosition=i===0?'55% 21%':'center';
+    b.children[0].style.backgroundPosition=src?((1+src.x)*50)+'% '+((1+src.y)*50)+'%':'center';
     b.children[1].textContent='0'+(i+1)+' '+labelAt(i);b.title=src?src.name:'Empty panel — import a photo';
     b.setAttribute('aria-label','Select panel '+(i+1)+', '+labelAt(i));
   });
@@ -154,7 +160,7 @@ function bindEditor() {
   });
   byId('allBtn').onclick=()=>{edit(()=>{const p=current();project.panels=project.panels.map(()=>({...p}));});notify('Source applied to all four panels.');};
   byId('clearBtn').onclick=()=>{edit(()=>project.panels[active]=freshPanel(null));notify('Panel cleared. Import a photo to fill it.');};
-  byId('sampleBtn').onclick=()=>{edit(()=>project.panels=defaultPanels());notify('Illustrated plates restored.');};
+  byId('sampleBtn').onclick=()=>{edit(()=>project.panels=defaultPanels());notify('AI-generated sample photos restored.');};
   byId('library').onchange=e=>{const src=sources.get(e.target.value);if(src)edit(()=>project.panels[active]=freshPanel(e.target.value,src.x,src.y));};
   byId('undoBtn').onclick=()=>rewind(true);byId('redoBtn').onclick=()=>rewind(false);
   byId('addBtn').onclick=()=>byId('fileInput').click();
@@ -244,7 +250,7 @@ async function downloadPng() {
     const blob=await new Promise(resolve=>proof.toBlob(resolve,'image/png'));if(!blob)throw Error();
     const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=name;link.click();
     setTimeout(()=>URL.revokeObjectURL(link.href),30000);notify('PNG exported · '+name);
-  }catch{notify('PNG export failed. Try restoring the illustrated plates.');}
+  }catch{notify('PNG export failed. Try importing a local photo.');}
 }
 function openStore() {
   return new Promise((resolve,reject)=>{
@@ -291,13 +297,32 @@ document.addEventListener('keydown',e=>{
   const moves={arrowleft:[.09,0],arrowright:[-.09,0],arrowup:[0,.09],arrowdown:[0,-.09]};
   if(moves[key]){e.preventDefault();edit(()=>{current().x=clamp(current().x+moves[key][0],-1,1);current().y=clamp(current().y+moves[key][1],-1,1);});showGuide();}
 });
-async function startStudio() {
-  const plates=[pilotPlate,coupePlate,keyPlate,crossingPlate];
-  await Promise.all(plates.map(async(draw,i)=>{
-    const id=sampleIds[i],data='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(draw());
-    const image=await decodeImage(data);images.set(id,image);
-    sources.set(id,{name:plateLabels[i]+' · illustrated plate',data,x:0,y:i===0?-.68:-.16});
+async function loadSamplePhotos() {
+  // Chrome gives file pages opaque origins. Data URLs keep their local canvas exportable.
+  if(location.protocol==='file:'){
+    await new Promise((resolve,reject)=>{
+      const script=document.createElement('script');
+      script.src='photos/offline-photos.js';script.onload=resolve;script.onerror=reject;
+      document.head.append(script);
+    });
+  }
+  const photos=await Promise.all(samplePhotos.map(async photo=>{
+    const data=location.protocol==='file:' ? offlinePhotos[photo.file] : 'photos/'+photo.file;
+    return {...photo,image:await decodeImage(data)};
   }));
+  for(const {id,label,file,image,x,y} of photos){
+    images.set(id,image);
+    sources.set(id,{label,name:label+' · AI-generated sample',data:'photos/'+file,x,y});
+  }
+}
+async function startStudio() {
+  try{
+    await loadSamplePhotos();
+  }catch{
+    project.panels=samplePhotos.map(()=>freshPanel(null));
+    byId('sampleBtn').disabled=true;
+    notify('Sample photos could not open. Import your photos to start.');
+  }
   makeControls();bindEditor();updateLibrary();sync();
 }
-startStudio().catch(()=>notify('The illustrated plates could not open. Reload the studio.'));
+startStudio();
