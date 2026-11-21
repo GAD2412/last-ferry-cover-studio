@@ -1,12 +1,14 @@
-// Local files, clipboard and drops enter the same four-panel editing workflow.
+// Import real local files, clipboard photos or drops without uploading them.
+// Compare source pairs the original file and its filename with the live cover.
+// The optional samples depict original AI-generated fictional scenes. Format controls set the PNG size.
 const byId = id => document.getElementById(id);
 const proof = byId('proofCanvas');
 const images = new Map(), sources = new Map();
 const samplePhotos = [
-  {id:'plate-0', label:'Pilot', file:'pilot.jpg', x:.08, y:-.8},
-  {id:'plate-1', label:'Coupe', file:'coupe.jpg', x:-.24, y:.12},
-  {id:'plate-2', label:'Motel key', file:'key.jpg', x:0, y:0},
-  {id:'plate-3', label:'Crossing', file:'crossing.jpg', x:0, y:-.16}
+  {id:'plate-0', label:'Pilot', file:'pilot.avif', x:.08, y:-.8},
+  {id:'plate-1', label:'Coupe', file:'coupe.avif', x:-.24, y:.12},
+  {id:'plate-2', label:'Motel key', file:'key.avif', x:0, y:0},
+  {id:'plate-3', label:'Crossing', file:'crossing.avif', x:0, y:-.16}
 ];
 const sampleIds = samplePhotos.map(photo=>photo.id);
 const freshPanel = (source, x=0, y=0) => ({source,x,y,zoom:1,turn:0,flip:false});
@@ -17,6 +19,7 @@ let project = {
 };
 let active=0, previous=[], future=[], raf=0, noticeTimer, guideTimer, dragging=null, serial=0;
 let pendingEdit=null;
+let comparedSource=null, comparisonUrl;
 const clamp=(n,l,h)=>Math.min(h,Math.max(l,n));
 const current=()=>project.panels[active];
 const snapshot=()=>JSON.stringify(project);
@@ -104,6 +107,37 @@ function updateLibrary() {
   for(const [id,src] of sources)library.add(new Option(src.name,id));
   byId('libraryBox').hidden=![...sources.keys()].some(id=>!sampleIds.includes(id));
 }
+function syncComparison() {
+  const open=!byId('compareSource').hidden;
+  const id=current().source;
+  const source=open?sources.get(id):null;
+  if(comparedSource===source)return;
+  comparedSource=source;
+
+  const image=byId('compareImage');
+  image.removeAttribute('src');
+  if(comparisonUrl)URL.revokeObjectURL(comparisonUrl);
+  comparisonUrl=undefined;
+  image.hidden=!source;
+  byId('compareEmpty').hidden=Boolean(source);
+  if(!open)return;
+
+  const label=byId('compareSourceLabel');
+  byId('compareFilename').textContent=source?.name||'';
+  if(!source){
+    label.textContent='No source in this panel';
+  }else if(sampleIds.includes(id)){
+    label.textContent='Fictional sample photo';
+    image.src=images.get(id).src;
+  }else if(source.original){
+    label.textContent='Original local photo';
+    comparisonUrl=URL.createObjectURL(source.original);
+    image.src=comparisonUrl;
+  }else{
+    label.textContent='Saved local photo';
+    image.src=source.data;
+  }
+}
 function sync() {
   for(const [id,value] of Object.entries({quickCaption:project.caption,caption:project.caption,subtitle:project.subtitle,typeface:project.type,placement:project.placement,typeSize:project.typeSize,grain:project.grain,vignette:project.vignette,zoom:Math.round(current().zoom*100)})){
     if(String(byId(id).value)!==String(value))byId(id).value=value;
@@ -152,7 +186,7 @@ function sync() {
   summary.classList.toggle('has-local',locals>0);
   [...byId('grades').children].forEach(b=>b.setAttribute('aria-pressed',b.textContent===project.grade));
   byId('guide').firstElementChild.setAttribute('points',polygonPoints(panelPolygons(project.format,project.layout)[active]));
-  historyControls();fitProof();redraw();
+  syncComparison();historyControls();fitProof();redraw();
 }
 function wireValue(id,set) {
   const el=byId(id);
@@ -173,6 +207,14 @@ function wireValue(id,set) {
 function bindEditor() {
   document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
   document.querySelectorAll('[data-format]').forEach(b=>b.onclick=()=>edit(()=>project.format=b.dataset.format));
+  byId('compareBtn').onclick=e=>{
+    const open=byId('compareSource').hidden;
+    e.currentTarget.setAttribute('aria-pressed',open);
+    byId('compareSource').hidden=!open;
+    byId('compareCoverLabel').hidden=!open;
+    byId('previewPair').classList.toggle('is-comparing',open);
+    syncComparison();fitProof();
+  };
   for(const id of ['quickCaption','caption'])wireValue(id,v=>project.caption=v);
   wireValue('subtitle',v=>project.subtitle=v);
   wireValue('zoom',v=>current().zoom=Number(v)/100);
@@ -242,7 +284,7 @@ async function localPhoto(file) {
   const ctx=bitmap.getContext('2d');ctx.fillStyle='#293643';ctx.fillRect(0,0,bitmap.width,bitmap.height);ctx.drawImage(img,0,0,bitmap.width,bitmap.height);
   const data=bitmap.toDataURL('image/jpeg',.95), [x,y]=await smartFocus(bitmap);
   const id='local-'+Date.now().toString(36)+'-'+(++serial);
-  return {id,x,y,data,image:bitmap,name:file.name||'Clipboard image'};
+  return {id,x,y,data,image:bitmap,original:file,name:file.name||'Clipboard image'};
 }
 let importQueue=Promise.resolve();
 function enqueueFiles(files) {
@@ -327,15 +369,16 @@ document.addEventListener('keydown',e=>{
 });
 async function loadSamplePhotos() {
   // Chrome gives file pages opaque origins. Data URLs keep their local canvas exportable.
-  if(location.protocol==='file:'){
+  const directFile=location.protocol==='file:';
+  if(directFile){
     await new Promise((resolve,reject)=>{
       const script=document.createElement('script');
-      script.src='photos/offline-photos.js';script.onload=resolve;script.onerror=reject;
+      script.src='photos/demo-photo-data.js';script.onload=resolve;script.onerror=reject;
       document.head.append(script);
     });
   }
   const photos=await Promise.all(samplePhotos.map(async photo=>{
-    const data=location.protocol==='file:' ? offlinePhotos[photo.file] : 'photos/'+photo.file;
+    const data=directFile ? demoPhotoData[photo.file] : 'photos/'+photo.file;
     return {...photo,image:await decodeImage(data)};
   }));
   for(const {id,label,file,image,x,y} of photos){
