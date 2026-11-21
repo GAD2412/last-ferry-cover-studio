@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Last Ferry is an offline photo-to-poster studio. Four independently framed panels, an original display alphabet, five print grades and three native PNG formats. -->
+<!-- Last Ferry makes four-panel posters from local photos. Choose one of three layouts, crop each panel, set the original Sunset Chrome lettering and export a square, portrait or wide PNG offline. -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -64,7 +64,7 @@
           <button id="emptyImport" hidden><svg><use href="#upload"/></svg><strong>Add your first photo</strong><span>Drop it here or choose a file</span></button>
         </div>
       </div>
-      <div class="proof-foot"><span id="formatNote">1080 × 1080 PX</span><span class="feature-summary">4 local panels · 5 grades · 3 PNG sizes</span><span id="gradeNote">SUNSET</span></div>
+      <div class="proof-foot"><span id="formatNote">1080 × 1080 PX</span><span class="feature-summary">3 layouts · Local photo crops · 3 PNG sizes</span><span id="gradeNote">SUNSET</span></div>
     </section>
     <aside class="inspector">
       <nav class="tabs" aria-label="Editing tools">
@@ -73,7 +73,9 @@
         <button data-tab="finish" aria-pressed="false">Finish</button>
       </nav>
       <section id="panels" class="tab-content">
-        <div class="section-heading"><h2>Source panels</h2><small>01 — 04</small></div>
+        <div class="section-heading"><h2 id="layoutLabel">Panel layout</h2></div>
+        <div id="layoutOptions" class="layout-options" role="group" aria-labelledby="layoutLabel"></div>
+        <div class="section-heading source-heading"><h2>Source panels</h2><span id="sourceSummary" aria-live="polite"></span></div>
         <div id="panelList" class="panel-list" aria-label="Choose a panel"></div>
         <button class="import" id="addBtn"><svg><use href="#upload"/></svg><span><strong>Import photos</strong><small>Choose files, drop or paste</small></span><b>+</b></button>
         <input type="file" id="fileInput" accept="image/*" multiple hidden>
@@ -91,7 +93,7 @@
         <div class="section-heading"><h2>Title treatment</h2></div>
         <label for="caption">Caption</label><input id="caption" maxlength="64" type="text">
         <label for="subtitle">Subtitle strip</label><input id="subtitle" maxlength="90" type="text">
-        <label for="typeface">Lettering style</label><select id="typeface"><option>Harbor Block</option><option>Screen Serif</option><option>Studio Sans</option></select>
+        <label for="typeface">Lettering style</label><select id="typeface"><option>Harbor Block</option><option>Sunset Chrome</option><option>Screen Serif</option><option>Studio Sans</option></select>
         <div class="slider-label"><label for="typeSize">Title size</label><output id="sizeValue" for="typeSize"></output></div><input type="range" id="typeSize" min="55" max="150">
         <label for="placement">Placement</label><select id="placement"><option>Lower</option><option>Center</option><option>Top</option></select>
       </section>

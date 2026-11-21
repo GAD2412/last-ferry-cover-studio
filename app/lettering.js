@@ -47,13 +47,19 @@ function printCaption(ctx, width, height, settings) {
   const unit = Math.min(width, height);
   const mid = settings.placement === 'Center';
   const top = settings.placement === 'Top';
-  const mark = settings.type === 'Harbor Block' && harborWordmark(text);
-  const wideLower = width > height * 1.5 && !mid && !top;
-  // Leave the motel tag visible beyond the sloping edge of the landscape pilot panel.
-  const center = width * (wideLower ? .231 : .5);
-  const base = height * (top ? .22 : mid ? .53 : wideLower ? .9 : .885);
-  const maxWidth = width * (wideLower ? .405 : .885);
-  let fontHeight = unit * .137 * settings.typeSize / 100;
+  const chrome = settings.type === 'Sunset Chrome';
+  const mark = (chrome || settings.type === 'Harbor Block') && harborWordmark(text);
+  const wide = settings.format === 'Wide';
+  // Keep Lower below the pilot's face and give the landscape Harbor title its own panel.
+  const lower = settings.layout === 'Ensemble' ? [.5, .9, wide ? .69 : .85]
+    : settings.layout === 'Staggered' ? [.54, .905, .84]
+    : wide ? [.231, .9, .405]
+    : [.5, .885, .885];
+  const [anchorX, anchorY, span] = top || mid ? [.5, top ? .22 : .53, .885] : lower;
+  const center = width * anchorX;
+  const base = height * anchorY;
+  const maxWidth = width * span;
+  const fontHeight = unit * .137 * settings.typeSize / 100;
   ctx.save();
   ctx.font = settings.type === 'Screen Serif' ? 'italic 900 100px Georgia,serif' : '900 100px Arial Black,Arial,sans-serif';
   const metrics = ctx.measureText(text);
@@ -84,14 +90,32 @@ function printCaption(ctx, width, height, settings) {
     ctx.lineJoin = 'round';
     ctx.save();
     ctx.translate(2.4,5.6); ctx.lineWidth = 6.1; ctx.strokeStyle = '#151d31'; drawStroke();
-    ctx.fillStyle = '#ec776c'; drawFill();
+    ctx.fillStyle = chrome ? '#90365e' : '#ec776c'; drawFill();
     ctx.restore();
-    ctx.lineWidth = 4.3; ctx.strokeStyle = '#20283b'; drawStroke();
+    ctx.lineWidth = 4.3; ctx.strokeStyle = chrome ? '#28182f' : '#20283b'; drawStroke();
     const color = ctx.createLinearGradient(0,y0,0,y0+nativeHeight);
-    color.addColorStop(0,'#fff8d8'); color.addColorStop(.48,'#ffe7b9');
-    color.addColorStop(.54,'#ffd8a1'); color.addColorStop(.82,'#ffa885'); color.addColorStop(1,'#f4847c');
+    if (chrome) {
+      color.addColorStop(0,'#fff0bc');
+      color.addColorStop(.37,'#ffcf78');
+      color.addColorStop(.48,'#ffab77');
+      color.addColorStop(.76,'#ff7b9f');
+      color.addColorStop(1,'#e84cab');
+    } else {
+      color.addColorStop(0,'#fff8d8'); color.addColorStop(.48,'#ffe7b9');
+      color.addColorStop(.54,'#ffd8a1'); color.addColorStop(.82,'#ffa885'); color.addColorStop(1,'#f4847c');
+    }
     ctx.fillStyle = color; drawFill();
-    ctx.lineWidth = .65; ctx.strokeStyle = '#ffdfb0'; drawStroke();
+    ctx.lineWidth = .65;
+    if (chrome) {
+      const rim = ctx.createLinearGradient(0,y0,0,y0+nativeHeight);
+      rim.addColorStop(0,'#fff9d5');
+      rim.addColorStop(.58,'#ffe4b7');
+      rim.addColorStop(1,'#ff8ed1');
+      ctx.strokeStyle = rim;
+    } else {
+      ctx.strokeStyle = '#ffdfb0';
+    }
+    drawStroke();
   }
   ctx.restore();
   if (sub) {
@@ -101,7 +125,7 @@ function printCaption(ctx, width, height, settings) {
     ctx.letterSpacing = (fontSize * .23) + 'px';
     const banner = Math.min(maxWidth,ctx.measureText(sub).width+unit*.047);
     const y = base + unit * .017, h = fontSize * 1.73, left=center-banner/2;
-    ctx.fillStyle = '#f2c49d'; ctx.beginPath(); ctx.moveTo(left+4,y);ctx.lineTo(left+banner+4,y);ctx.lineTo(left+banner-3,y+h);ctx.lineTo(left-3,y+h);ctx.fill();
+    ctx.fillStyle = chrome ? '#ffd5af' : '#f2c49d'; ctx.beginPath(); ctx.moveTo(left+4,y);ctx.lineTo(left+banner+4,y);ctx.lineTo(left+banner-3,y+h);ctx.lineTo(left-3,y+h);ctx.fill();
     ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle='#252c3e';
     ctx.fillText(sub,center+1,y+h*.55,banner-unit*.025);
     ctx.restore();

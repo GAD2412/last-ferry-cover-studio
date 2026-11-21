@@ -12,7 +12,7 @@ const sampleIds = samplePhotos.map(photo=>photo.id);
 const freshPanel = (source, x=0, y=0) => ({source,x,y,zoom:1,turn:0,flip:false});
 const defaultPanels = () => samplePhotos.map(({id,x,y})=>freshPanel(id,x,y));
 let project = {
-  format:'Square', caption:'Last Ferry', subtitle:'One crossing before dawn', type:'Harbor Block',
+  format:'Square', layout:layouts[0], caption:'Last Ferry', subtitle:'One crossing before dawn', type:'Harbor Block',
   typeSize:100, placement:'Lower', grade:'Sunset', grain:5, vignette:16, panels:defaultPanels()
 };
 let active=0, previous=[], future=[], raf=0, noticeTimer, guideTimer, dragging=null, serial=0;
@@ -76,11 +76,19 @@ function setTab(tab) {
     byId(button.dataset.tab).hidden=!on;
   });
 }
+const polygonPoints=points=>points.map(([x,y])=>[x*100,y*100].join(',')).join(' ');
 function makeControls() {
-  samplePhotos.forEach(({label},i)=>{
+  for(const layout of layouts){
+    const button=document.createElement('button');
+    button.dataset.layout=layout;
+    button.innerHTML='<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon/><polygon/><polygon/><polygon/></svg>';
+    button.append(layout);
+    button.onclick=()=>edit(()=>project.layout=layout);
+    byId('layoutOptions').append(button);
+  }
+  samplePhotos.forEach((_,i)=>{
     const btn=document.createElement('button');
-    btn.setAttribute('aria-label','Select panel '+(i+1)+', '+label);
-    btn.innerHTML='<span class="thumb"></span><em></em>';btn.onclick=()=>selectPanel(i);
+    btn.innerHTML='<span class="thumb"></span><em></em><small class="panel-source"></small>';btn.onclick=()=>selectPanel(i);
     byId('panelList').append(btn);
   });
   const colors=[['#f7cc94','#e47d83','#65587a'],['#b56dbb','#5c4b85','#344b70'],['#efb2a7','#e9849f','#986489'],['#d7dbd7','#8e9291','#38444a'],['#f6d38c','#d69c64','#8c6d62']];
@@ -116,16 +124,34 @@ function sync() {
   byId('downloadBtn').disabled=!project.panels.some(p=>images.has(p.source));
   byId('emptyImport').hidden=!byId('downloadBtn').disabled;
   document.querySelectorAll('[data-format]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.format===project.format));
+  for(const button of byId('layoutOptions').children){
+    const layout=button.dataset.layout;
+    button.setAttribute('aria-pressed',project.layout===layout);
+    panelPolygons(project.format,layout).forEach((points,i)=>{
+      button.firstElementChild.children[i].setAttribute('points',polygonPoints(points));
+    });
+  }
+  let locals=0, demos=0;
   [...byId('panelList').children].forEach((b,i)=>{
-    const src=sources.get(project.panels[i].source);
+    const id=project.panels[i].source, src=sources.get(id);
+    const kind=src ? (sampleIds.includes(id) ? 'Demo' : 'Local file') : 'Empty';
+    if(kind==='Demo')demos++;
+    if(kind==='Local file')locals++;
     b.setAttribute('aria-pressed',active===i);
     b.children[0].style.backgroundImage=src?'url("'+src.data+'")':'none';
     b.children[0].style.backgroundPosition=src?((1+src.x)*50)+'% '+((1+src.y)*50)+'%':'center';
     b.children[1].textContent='0'+(i+1)+' '+labelAt(i);b.title=src?src.name:'Empty panel — import a photo';
-    b.setAttribute('aria-label','Select panel '+(i+1)+', '+labelAt(i));
+    b.children[2].textContent=kind;
+    b.dataset.source=kind;
+    b.setAttribute('aria-label','Select panel '+(i+1)+', '+labelAt(i)+(src?', '+kind:''));
   });
+  const summary=byId('sourceSummary');
+  const sourceText=locals ? locals+' local '+(locals===1?'slot':'slots')+(demos?' · '+demos+(demos===1?' demo':' demos'):'')
+    : demos ? 'AI-generated demos' : 'No photos loaded';
+  if(summary.textContent!==sourceText)summary.textContent=sourceText;
+  summary.classList.toggle('has-local',locals>0);
   [...byId('grades').children].forEach(b=>b.setAttribute('aria-pressed',b.textContent===project.grade));
-  byId('guide').firstElementChild.setAttribute('points',panelPolygons(project.format)[active].map(([x,y])=>[x*100,y*100].join(',')).join(' '));
+  byId('guide').firstElementChild.setAttribute('points',polygonPoints(panelPolygons(project.format,project.layout)[active]));
   historyControls();fitProof();redraw();
 }
 function wireValue(id,set) {
@@ -171,23 +197,24 @@ function bindEditor() {
   byId('helpBtn').onclick=()=>byId('shortcuts').showModal();byId('closeHelp').onclick=()=>byId('shortcuts').close();
   new ResizeObserver(fitProof).observe(byId('mat'));
 }
-function canvasPoint(event) {
+function canvasPoint(event, width, height) {
   const rect=proof.getBoundingClientRect();
-  return [(event.clientX-rect.left)*proof.width/rect.width,(event.clientY-rect.top)*proof.height/rect.height];
+  return [(event.clientX-rect.left)*width/rect.width,(event.clientY-rect.top)*height/rect.height];
 }
 proof.addEventListener('pointerdown',e=>{
   if(e.button!==0||dragging)return;
-  const [x,y]=canvasPoint(e),boxes=panelGeometry(project.format,proof.width,proof.height);
+  const [width,height]=formats[project.format], [x,y]=canvasPoint(e,width,height);
+  const boxes=panelGeometry(project.format,project.layout,width,height);
   const i=boxes.findIndex(b=>proof.getContext('2d').isPointInPath(b.path,x,y));
   if(i<0)return;
   selectPanel(i);setTab('panels');proof.focus({preventScroll:true});
   const p=current(),image=images.get(p.source);if(!image){notify('Empty panel. Choose Import photos.');return;}
   const t=transformedPhoto(image,p,boxes[i]);
-  dragging={id:e.pointerId,x,y,cx:p.x,cy:p.y,t,before:snapshot()};proof.setPointerCapture(e.pointerId);
+  dragging={id:e.pointerId,x,y,width,height,cx:p.x,cy:p.y,t,before:snapshot()};proof.setPointerCapture(e.pointerId);
 });
 proof.addEventListener('pointermove',e=>{
   if(!dragging||dragging.id!==e.pointerId)return;
-  const [x,y]=canvasPoint(e),d=dragging;
+  const d=dragging, [x,y]=canvasPoint(e,d.width,d.height);
   if(d.t.extraX>0.01)current().x=clamp(d.cx-2*(x-d.x)/d.t.extraX,-1,1);
   if(d.t.extraY>0.01)current().y=clamp(d.cy-2*(y-d.y)/d.t.extraY,-1,1);
   redraw();showGuide();
@@ -280,7 +307,8 @@ async function restoreProject() {
     if(!data){notify('No saved project yet. Use Save to keep this cover.');return;}
     const loaded=await Promise.all(data.photos.map(async([id,record])=>[id,record,await decodeImage(record.data)]));
     for(const [id,record,img] of loaded){sources.set(id,record);images.set(id,img);}
-    updateLibrary();edit(()=>project=data.project);notify('Saved project restored.');
+    const layout=layouts.includes(data.project.layout)?data.project.layout:layouts[0];
+    updateLibrary();edit(()=>project={...data.project,layout});notify('Saved project restored.');
   }catch{notify('The saved project could not be opened.');}
 }
 document.addEventListener('keydown',e=>{

@@ -1,5 +1,6 @@
 // One compositor drives the live proof and lossless PNG. Panel guides belong to the editor overlay.
 const formats = {Square:[1080,1080], Portrait:[1080,1350], Wide:[1920,1080]};
+const layouts = ['Harbor', 'Ensemble', 'Staggered'];
 const finishes = {
   'Sunset': ['saturate(1.07) contrast(1.04)', '#ea816a', .035],
   'Neon night': ['saturate(1.36) contrast(1.14) hue-rotate(-12deg)', '#7658c3', .19],
@@ -7,14 +8,39 @@ const finishes = {
   'Noir': ['grayscale(1) contrast(1.3)', '#263749', .12],
   'Gold hour': ['sepia(.32) saturate(1.18) contrast(1.06)', '#ffc976', .14]
 };
-function panelPolygons(format) {
-  if (format === 'Wide') return [
+function panelPolygons(format, layout) {
+  const wide = format === 'Wide', portrait = format === 'Portrait';
+  if (layout === 'Ensemble') {
+    const leftTop = wide ? .32 : portrait ? .225 : .25;
+    const rightTop = wide ? .69 : portrait ? .75 : .73;
+    const leftBottom = leftTop - .065, rightBottom = rightTop + .05;
+    const cut = .49;
+    const rightCut = rightTop + (rightBottom - rightTop) * cut;
+    return [
+      [[leftTop,0],[rightTop,0],[rightBottom,1],[leftBottom,1]],
+      [[rightTop,0],[1,0],[1,.42],[rightCut,cut]],
+      [[0,0],[leftTop,0],[leftBottom,1],[0,1]],
+      [[rightCut,cut],[1,.42],[1,1],[rightBottom,1]]
+    ];
+  }
+  if (layout === 'Staggered') {
+    const seamLeft = portrait ? .57 : .54, seamRight = .40;
+    const upperSplit = wide ? .61 : .68, lowerSplit = wide ? .35 : .30;
+    const seam = x => [x, seamLeft + (seamRight - seamLeft) * x];
+    return [
+      [[0,0],[upperSplit-.045,0],seam(upperSplit),seam(0)],
+      [[upperSplit-.045,0],[1,0],seam(1),seam(upperSplit)],
+      [seam(0),seam(lowerSplit),[lowerSplit+.06,1],[0,1]],
+      [seam(lowerSplit),seam(1),[1,1],[lowerSplit+.06,1]]
+    ];
+  }
+  if (wide) return [
     [[0,0],[.49,0],[.448,1],[0,1]],
     [[.49,0],[1,0],[1,.47],[.469,.52]],
     [[.469,.52],[.736,.495],[.712,1],[.448,1]],
     [[.736,.495],[1,.47],[1,1],[.712,1]]
   ];
-  const a = format === 'Portrait' ? .64 : .606;
+  const a = portrait ? .64 : .606;
   return [
     [[0,0],[a+.046,0],[a-.047,1],[0,1]],
     [[a+.046,0],[1,0],[1,.295],[a+.016,.326]],
@@ -22,8 +48,8 @@ function panelPolygons(format) {
     [[a-.008,.573],[1,.529],[1,1],[a-.047,1]]
   ];
 }
-function panelGeometry(format, width, height) {
-  return panelPolygons(format).map(points => {
+function panelGeometry(format, layout, width, height) {
+  return panelPolygons(format, layout).map(points => {
     const xs=points.map(p=>p[0]*width), ys=points.map(p=>p[1]*height);
     const x=Math.min(...xs), y=Math.min(...ys);
     const path=new Path2D();
@@ -93,7 +119,7 @@ function printImprint(ctx,w,h) {
 function renderCover(canvas,settings,images) {
   const [w,h]=formats[settings.format];
   if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
-  const ctx=canvas.getContext('2d'), boxes=panelGeometry(settings.format,w,h), u=Math.min(w,h);
+  const ctx=canvas.getContext('2d'), boxes=panelGeometry(settings.format,settings.layout,w,h), u=Math.min(w,h);
   ctx.fillStyle='#1d2639';ctx.fillRect(0,0,w,h);
   boxes.forEach((box,i)=>paintPanel(ctx,images.get(settings.panels[i].source),settings.panels[i],box,settings.grade));
   ctx.strokeStyle='#1c2335';ctx.lineWidth=u*.011;ctx.lineJoin='round';
