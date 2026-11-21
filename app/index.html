@@ -43,16 +43,23 @@
       <i></i>
       <button id="saveBtn" class="quiet" title="Save project on this device"><svg><use href="#save"/></svg><span>Save</span></button>
       <button id="restoreBtn" class="icon" aria-label="Restore saved project" title="Restore saved project"><svg><use href="#folder"/></svg></button>
-      <button id="downloadBtn" class="primary"><svg><use href="#download"/></svg>Download PNG</button>
     </div>
   </header>
   <main class="workspace">
     <section class="proof" aria-label="Live cover preview">
-      <div class="proof-head"><div><p class="eyebrow"><b></b> Live proof</p><h1 id="projectName">Last Ferry</h1></div>
-        <div class="format-group" aria-label="Export format">
-          <button data-format="Square" aria-label="Square 1080 by 1080"><i class="square"></i>1:1</button>
-          <button data-format="Portrait" aria-label="Portrait 1080 by 1350"><i class="portrait"></i>4:5</button>
-          <button data-format="Wide" aria-label="Wide 1920 by 1080"><i class="wide"></i>16:9</button>
+      <div class="proof-head">
+        <h1 class="sr-only" id="projectName">Last Ferry</h1>
+        <div class="proof-caption">
+          <label for="quickCaption" class="eyebrow"><b></b>Edit caption</label>
+          <input id="quickCaption" type="text" maxlength="64" value="Last Ferry" placeholder="Untitled cover">
+        </div>
+        <div class="proof-actions">
+          <div class="format-group" role="group" aria-label="Export format">
+            <button data-format="Square" aria-label="Square 1080 by 1080"><i class="square"></i>1:1</button>
+            <button data-format="Portrait" aria-label="Portrait 1080 by 1350"><i class="portrait"></i>4:5</button>
+            <button data-format="Wide" aria-label="Wide 1920 by 1080"><i class="wide"></i>16:9</button>
+          </div>
+          <button id="downloadBtn" class="primary"><svg><use href="#download"/></svg>Download PNG</button>
         </div>
       </div>
       <div class="mat" id="mat">

@@ -17,3 +17,12 @@ dialog{background:var(--panel);color:var(--text);border:1px solid #576158;border
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 .panel-list em{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.section-heading small{overflow:hidden;text-overflow:ellipsis;max-width:53%}
 #emptyImport{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:7px;background:#222b28;color:var(--text);border:1px solid var(--accent);border-radius:6px;padding:20px;min-width:185px}#emptyImport svg{color:var(--accent)}#emptyImport span{color:var(--quiet);font-size:11px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+.proof-head{flex-wrap:wrap;align-items:flex-end;column-gap:20px}
+.proof-caption{flex:1 1 180px;min-width:0;max-width:30rem}
+.proof-caption .eyebrow{cursor:text}
+#quickCaption{display:block;width:100%;font-size:clamp(21px,2vw,29px);line-height:1.15;letter-spacing:-.8px;font-weight:600;padding:2px 0 4px;background:transparent;border:0;border-bottom:1px solid #758374;border-radius:0;text-overflow:ellipsis}
+#quickCaption:hover,#quickCaption:focus{border-color:var(--accent)}
+.proof-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.proof-actions .primary{margin:0}
+@media(max-width:520px){.proof-caption{flex-basis:100%;max-width:none}.proof-actions{width:100%;justify-content:space-between}}

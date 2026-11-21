@@ -10,6 +10,7 @@ let project = {
   typeSize:100, placement:'Lower', grade:'Sunset', grain:18, vignette:29, panels:defaultPanels()
 };
 let active=0, previous=[], future=[], raf=0, noticeTimer, guideTimer, dragging=null, serial=0;
+let pendingEdit=null;
 const clamp=(n,l,h)=>Math.min(h,Math.max(l,n));
 const current=()=>project.panels[active];
 const snapshot=()=>JSON.stringify(project);
@@ -28,12 +29,22 @@ function remember(before) {
   future=[];historyControls();
 }
 function historyControls() {
-  byId('undoBtn').disabled=!previous.length;byId('redoBtn').disabled=!future.length;
+  const changed=pendingEdit && pendingEdit.before!==snapshot();
+  byId('undoBtn').disabled=!previous.length&&!changed;byId('redoBtn').disabled=!future.length||Boolean(changed);
+}
+function finishInput() {
+  if(!pendingEdit)return;
+  const {before}=pendingEdit;
+  pendingEdit=null;
+  remember(before);
+  historyControls();
 }
 function edit(change) {
+  finishInput();
   const before=snapshot();change();remember(before);sync();
 }
 function rewind(undo) {
+  finishInput();
   const from=undo?previous:future, to=undo?future:previous;
   if(!from.length)return;
   to.push(snapshot());project=JSON.parse(from.pop());sync();
@@ -80,7 +91,7 @@ function updateLibrary() {
   byId('libraryBox').hidden=![...sources.keys()].some(id=>!sampleIds.includes(id));
 }
 function sync() {
-  for(const [id,value] of Object.entries({caption:project.caption,subtitle:project.subtitle,typeface:project.type,placement:project.placement,typeSize:project.typeSize,grain:project.grain,vignette:project.vignette,zoom:Math.round(current().zoom*100)})){
+  for(const [id,value] of Object.entries({quickCaption:project.caption,caption:project.caption,subtitle:project.subtitle,typeface:project.type,placement:project.placement,typeSize:project.typeSize,grain:project.grain,vignette:project.vignette,zoom:Math.round(current().zoom*100)})){
     if(String(byId(id).value)!==String(value))byId(id).value=value;
   }
   for(const [id,key] of [['grainValue','grain'],['vignetteValue','vignette'],['sizeValue','typeSize']])byId(id).value=project[key]+'%';
@@ -112,14 +123,26 @@ function sync() {
   historyControls();fitProof();redraw();
 }
 function wireValue(id,set) {
-  const el=byId(id);let start=null;
-  el.addEventListener('input',()=>{if(start===null)start=snapshot();set(el.value);sync();});
-  el.addEventListener('change',()=>{if(start===null){edit(()=>set(el.value));return;}remember(start);start=null;});
+  const el=byId(id);
+  el.addEventListener('input',()=>{
+    if(pendingEdit?.id!==id){
+      finishInput();
+      pendingEdit={id,before:snapshot()};
+    }
+    set(el.value);
+    sync();
+  });
+  el.addEventListener('change',()=>{
+    if(pendingEdit?.id===id)finishInput();
+    else edit(()=>set(el.value));
+  });
+  el.addEventListener('blur',()=>{if(pendingEdit?.id===id)finishInput();});
 }
 function bindEditor() {
   document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
   document.querySelectorAll('[data-format]').forEach(b=>b.onclick=()=>edit(()=>project.format=b.dataset.format));
-  wireValue('caption',v=>project.caption=v);wireValue('subtitle',v=>project.subtitle=v);
+  for(const id of ['quickCaption','caption'])wireValue(id,v=>project.caption=v);
+  wireValue('subtitle',v=>project.subtitle=v);
   wireValue('zoom',v=>current().zoom=Number(v)/100);
   for(const key of ['grain','vignette','typeSize'])wireValue(key,v=>project[key]=Number(v));
   byId('typeface').onchange=e=>edit(()=>project.type=e.target.value);
@@ -255,11 +278,11 @@ async function restoreProject() {
   }catch{notify('The saved project could not be opened.');}
 }
 document.addEventListener('keydown',e=>{
-  if(byId('shortcuts').open)return;
+  if(byId('shortcuts').open||e.isComposing)return;
   const key=e.key.toLowerCase(),mod=e.ctrlKey||e.metaKey;
   if(mod&&key==='s'){e.preventDefault();saveProject();return;}
   if(mod&&key==='enter'){e.preventDefault();if(!byId('downloadBtn').disabled)downloadPng();return;}
-  if(e.target.matches('input,select,textarea')||e.isComposing)return;
+  if(e.target.matches('input,select,textarea'))return;
   if(mod&&(key==='z'||key==='y')){e.preventDefault();rewind(key==='z'&&!e.shiftKey);return;}
   if(mod||e.altKey)return;
   if(/^[1-4]$/.test(key)){selectPanel(Number(key)-1);setTab('panels');return;}

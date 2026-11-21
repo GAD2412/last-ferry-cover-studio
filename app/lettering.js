@@ -49,9 +49,10 @@ function printCaption(ctx, width, height, settings) {
   const top = settings.placement === 'Top';
   const mark = settings.type === 'Harbor Block' && harborWordmark(text);
   const wideLower = width > height * 1.5 && !mid && !top;
-  const center = width * (wideLower ? .305 : .5);
+  // Leave the motel tag visible beyond the sloping edge of the landscape pilot panel.
+  const center = width * (wideLower ? .231 : .5);
   const base = height * (top ? .22 : mid ? .53 : wideLower ? .9 : .885);
-  const maxWidth = width * (wideLower ? .54 : .885);
+  const maxWidth = width * (wideLower ? .405 : .885);
   let fontHeight = unit * .137 * settings.typeSize / 100;
   ctx.save();
   ctx.font = settings.type === 'Screen Serif' ? 'italic 900 100px Georgia,serif' : '900 100px Arial Black,Arial,sans-serif';
